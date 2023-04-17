@@ -1,16 +1,12 @@
 (* Question 3 *)
 
 (*
-
 x1 = x2 /\ x2 = x3 /\ x4 = x5 /\ ~ ( f(x1) = f(x3) )
-
 x1 = x2 /\ x2 = x3 /\ x4 = x5 /\ f(x1) =/= f(x3)
-
 1.a. -> { x1, x2 } , { x2, x3 } , { x4 , x5 } , { f(x1) } , { f(x3) }
 1.b. -> { x1, x2, x3 } , { x4, x5 } , { f(x1) } , { f(x3) }
 1.c. -> { x1, x2, x3 } , { x4, x5 } , { f(x1), f(x3) }
 2. -> Unsatisfiable
-
 *)
 
 
@@ -34,6 +30,8 @@ let rec simpl phi = match phi with
     | (Not (Not ep))::phi -> simpl (ep::phi)
 ;;
 
+(* simplifie l'expression de phi en supprimant les Not qui y apparaissent *)
+
 simpl exemple;;
 
 let partition_a phi =
@@ -51,6 +49,10 @@ let partition_a phi =
      in parcours2 phi
 ;;
 
+(* réalise la partition de la partie 1.a de l'algorithme :
+   pour tout prédicat de la forme t=u on crée une classe d'équivalence {t,u}
+*)
+
 let classes_a = partition_a (simpl exemple);;
 classes_a;;
 
@@ -60,10 +62,14 @@ let rec merge l1 l2 = match l2 with
   | x::l2 -> x::(merge l1 l2)
 ;;
 
+(* fusionne deux listes sans doublons *)
+
 let rec merge_liste l = match l with
   | [] -> []
   | l1::l -> merge l1 (merge_liste l)
 ;;
+
+(* fusionne toutes les listes de la liste l *)
 
 let fusionne_c c classes =
   let leq = ref [c] in
@@ -81,10 +87,18 @@ let fusionne_c c classes =
   in parcours_c c; (merge_liste !leq), lneq classes
 ;;
 
+(* revoie un couple (leq, lneq) où leq est la liste des classes de classes qui ont un élément commun avec c
+   et lneq est la liste des autres classes
+*)
+
 let rec partition_b classes = match classes with
   | [] -> []
   | c::classes -> let nc, l = fusionne_c c classes in nc::(partition_b l)
 ;;
+
+(* réalise la partition de la partie 1.b de l'algorithme :
+   fusionne ensemble toutes les classes d'équivalence qui partagent un terme
+*)
 
 let classes_b = partition_b classes_a;;
 classes_b;;
@@ -102,31 +116,67 @@ let liste_classes_f_ti ti classes =
      !l
 ;;
 
+(* étant donné un terme ti, renvoie la liste des couples de la forme "(f,[f])"
+   avec f une fonction d'arité 1 tel qu'un terme de la forme "f(ti)" apparaît
+   dans une classe de "classes"
+*)
+
 liste_classes_f_ti (V 1) classes_b;;
 
-let cloture_congruence c classes =
+let fusionne_congruence c classes =
   let leq = ref [] in
   let locc = ref [] in
   let rec parcours_c c = match c with
     | [] -> ()
     | x::c -> let lx = (liste_classes_f_ti x classes) in parcours_lx lx; locc := merge lx !locc; parcours_c c
+(* calcule locc la liste des termes de la forme "f(ti)" apparaissant dans les classes de "classes" avec
+   "ti" un terme de "c" et "f" une fonction d'arité 1 *)
   and parcours_lx lx = match lx with
     | [] -> ()
     | (id_f, classe)::lx -> cherche id_f classe (!locc); parcours_lx lx
+(* Pour tout terme de la forme "f(x)" avec f une fonction d'arité 1 on cherche si un temre de la forme
+   "f(ti)" avec ti~x a déjà été rencontré *)
   and cherche id c0 l = match l with
     | [] -> ()
     | (id2, c)::l when id2 = id -> leq := c0::c::(!leq)
     | _::l -> cherche id c0 l
+(* cherche si la fonction "id" a déjà été ajoute à occ ce qui signifie que c0 et la classe où il apparaissait
+   précédemment doivent être fusionnées, les classes devant être fusionnées sont ajoutées à leq *)
   and lneq classes = match classes with
     | [] -> []
     | c::classes when List.mem c !leq -> lneq classes
     | c::classes -> c::(lneq classes)
+(* clacule la liste des classes ne devant pas être fusionnées suite au parcours de c *)
   in parcours_c c; (merge_liste !leq), lneq classes
 ;;
 
-cloture_congruence [V 1; V 2; V 3] [[F ("f", [V 1])]; [F ("f", [V 3])]; [V 4; V 5]];;
+(* renvoie le couple (cf, lneq) avec cf la fusion des classes contenant des termes de la forme f(ti) et f(tj)
+   tels que ti et t sont dans c et lneq la liste des classes ne devant pas être fusionnées
+*)
 
-let rec partition_c classes = match classes with
-  | [] -> []
-  | c::classes -> let leq, lneq = cloture_congruence c classes in leq::(partition_c lneq)
+fusionne_congruence [V 1; V 2; V 3] [[F ("f", [V 1])]; [F ("f", [V 3])]; [V 4; V 5]];;
+
+let rec cloture_congruence c classes =
+  let nc, nclasses = fusionne_congruence c classes in
+  if c = nc then c, classes else cloture_congruence nc (List.rev nc::nclasses)
 ;;
+
+(* itère fusionne_congruence pour calculer la clôture des ensembles obtenus en appliquant le procédé de la
+   partie 1.c de l'algorithme
+*)
+
+fusionne_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4]; [F ("f", [V 3]); F("f",[V 4])]];;
+cloture_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4]; [F ("f", [V 3]); F("f",[V 4])]];;
+
+(*let rec partition_c classes = match classes with
+  | [] -> []
+  | c::_ -> let cf, lneq = cloture_congruence c classes in
+;;*)
+
+(* Note : si on a "( t1 = t3 ) /\ (t2 = t4) /\ (F(t1,t2) = y) /\ (F(t3,t4) = z)"
+          alors on obtient les classes {t1,t3},{t2,t4},{F(t1,t2),y},{F(t3,t4),z}
+          (les fonctions d'arité au moins 2 ne sont pas traitées par l'algorithme)
+
+          on pourrait étendre l'algorithme en disant que si on a des termes de la forme
+          f(x1,...,xn) et f(y1,...,yn) avec x1~y1,...,xn~yn alors f(x1,...,xn)~f(y1,...,yn)
+*)
