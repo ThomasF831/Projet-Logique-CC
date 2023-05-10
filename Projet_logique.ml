@@ -1,4 +1,4 @@
-(* Question 3 *)
+ (* Question 3 *)
 
 (*
 x1 = x2 /\ x2 = x3 /\ x4 = x5 /\ ~ ( f(x1) = f(x3) )
@@ -143,7 +143,7 @@ let fusionne_congruence c classes =
 (* cherche si la fonction "id" a déjà été ajoute à occ ce qui signifie que c0 et la classe où il apparaissait
    précédemment doivent être fusionnées, les classes devant être fusionnées sont ajoutées à leq *)
   and lneq classes = match classes with
-    | [] -> [c]
+    | [] -> []
     | c::classes when List.mem c !leq -> lneq classes
     | c::classes -> c::(lneq classes)
 (* clacule la liste des classes ne devant pas être fusionnées suite au parcours de c *)
@@ -166,10 +166,16 @@ let permuted l1 l2 =
   else included l1 l2
 ;;
 
+let rec elim_classes_vides classes = match classes with
+  | [] -> []
+  | []::classes -> elim_classes_vides classes
+  | c::classes -> c::(elim_classes_vides classes)
+;;
+
 let rec cloture_congruence c classes =
   let nc, nclasses = fusionne_congruence c classes in
-  let l = nc::nclasses in
-  if permuted l (c::classes) then l else cloture_congruence nc nclasses
+  let l = elim_classes_vides (nc::nclasses) in
+  if c = nc then l,nc else cloture_congruence nc nclasses
 ;;
 
 (* itère fusionne_congruence pour calculer la clôture des ensembles obtenus en appliquant le procédé de la
@@ -177,17 +183,28 @@ let rec cloture_congruence c classes =
 *)
 
 fusionne_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4]; [F ("f", [V 3])]; [F("f",[V 4])]];;
-cloture_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4]; [F ("f", [V 3]); F("f",[V 4])]];;*
-cloture_congruence [V1; V2] [[F ("f", [V 1]); V 3]; F ("f", [V 2]); V 4; V 5]; [V 5; V 6; V 7]; [F ("f", V 6), F ("g", V 5)]; [F ("g", V 7)]; [F ("h", V 1)]];;
-
-(* let rec partition_c classes = match classes with
-  | [] -> []
-  | c::_ -> let cf, lneq = cloture_congruence c classes in
-;;*)
+cloture_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4]; [F ("f", [V 3]); F("f",[V 4])]];;
 
 (* Note : si on a "( t1 = t3 ) /\ (t2 = t4) /\ (F(t1,t2) = y) /\ (F(t3,t4) = z)"
           alors on obtient les classes {t1,t3},{t2,t4},{F(t1,t2),y},{F(t3,t4),z}
           (les fonctions d'arité au moins 2 ne sont pas traitées par l'algorithme)
           on pourrait étendre l'algorithme en disant que si on a des termes de la forme
           f(x1,...,xn) et f(y1,...,yn) avec x1~y1,...,xn~yn alors f(x1,...,xn)~f(y1,...,yn)
-*)
+ *)
+
+cloture_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4; V 5]; [V 5; V 6; V 7]; [F ("f", [V 6]); F ("g", [V 5])]; [F ("g", [V 7])]; [F ("h", [V 1])]];;
+
+let partition_c classes =
+  let q = Queue.create () in
+  let rec enfile_classes cl = match cl with
+      | [] -> ()
+      | c::cl -> Queue.add c q; enfile_classes cl
+  in enfile_classes classes;
+  let mc = ref classes in
+  let rc = ref classes in
+  let r = Queue.create () in
+  while not (Queue.is_empty q) do
+  done;
+
+let classes_c = partition_c classes_b;;
+classes_c;;
