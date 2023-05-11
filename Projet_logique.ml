@@ -21,6 +21,11 @@ type conj_eq = eq_pred list ;;
 
 let exemple = [ Eq ( (V 1), (V 2) ); Eq ( (V 2), (V 3) ); Eq ( (V 4), (V 5) ); Not ( Eq ( F ( "f" , [V 1] ), F ( "f" , [V 3] )  ) ) ];;
 
+
+
+                                         (*    Partie I-a    *)
+
+
 let rec simpl phi = match phi with
     | [] -> []
     | Eq(t1, t2)::phi -> Eq(t1, t2)::(simpl phi)
@@ -52,6 +57,12 @@ let partition_a phi =
 (* réalise la partition de la partie 1.a de l'algorithme :
    pour tout prédicat de la forme t=u on crée une classe d'équivalence {t,u}
 *)
+
+
+
+
+                                         (*    Partie I-b    *)
+
 
 let classes_a = partition_a (simpl exemple);;
 classes_a;;
@@ -102,6 +113,12 @@ let rec partition_b classes = match classes with
 
 let classes_b = partition_b classes_a;;
 classes_b;;
+
+
+
+
+                                          (*    Partie I-c    *)
+
 
 let liste_classes_f_ti ti classes =
   let l = ref [] in
@@ -156,16 +173,6 @@ let fusionne_congruence c classes =
 *)
 
 fusionne_congruence [V 1; V 2; V 3] [[F ("f", [V 1])]; [F ("f", [V 3])]; [V 4; V 5]];;
-
-let permuted l1 l2 =
-  let rec included l1 l2 = match l1 with
-    | [] -> true
-    | x::l when List.mem x l2 -> included l l2
-    | _ -> false
-  in
-  if List.length l1 <> List.length l2 then false
-  else included l1 l2
-;;
 
 let rec elim_classes_vides classes = match classes with
   | [] -> []
@@ -227,6 +234,11 @@ let classes_c = partition_c classes_b;;
 classes_c;;
 
 partition_c [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4; V 5]; [V 5; V 6; V 7]; [F ("f", [V 6]); F ("g", [V 5])]; [F ("g", [V 7])]; [F ("h", [V 1])]];;
+
+
+
+                                          (*    Partie II    *)
+
 
 let rec liste_inegalites formule = match formule with
   | [] -> []
