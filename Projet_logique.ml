@@ -126,6 +126,7 @@ liste_classes_f_ti (V 1) classes_b;;
 let fusionne_congruence c classes =
   let leq = ref [] in
   let locc = ref [] in
+  let c_in_leq = ref false in
   let rec parcours_c c = match c with
     | [] -> ()
     | x::c -> let lx = (liste_classes_f_ti x classes) in parcours_lx lx; locc := merge lx !locc; parcours_c c
@@ -138,7 +139,7 @@ let fusionne_congruence c classes =
    "f(ti)" avec ti~x a déjà été rencontré *)
   and cherche id c0 l = match l with
     | [] -> ()
-    | (id2, c)::l when id2 = id -> leq := c0::c::(!leq)
+    | (id2, c1)::l when id2 = id -> if (c0 = c || c1 = c) then c_in_leq := true; leq := c0::c1::(!leq)
     | _::l -> cherche id c0 l
 (* cherche si la fonction "id" a déjà été ajoute à occ ce qui signifie que c0 et la classe où il apparaissait
    précédemment doivent être fusionnées, les classes devant être fusionnées sont ajoutées à leq *)
@@ -147,7 +148,7 @@ let fusionne_congruence c classes =
     | c::classes when List.mem c !leq -> lneq classes
     | c::classes -> c::(lneq classes)
 (* clacule la liste des classes ne devant pas être fusionnées suite au parcours de c *)
-  in parcours_c c; (merge_liste !leq), lneq classes
+  in parcours_c c; (merge_liste !leq), lneq classes, c_in_leq
 ;;
 
 (* renvoie le couple (cf, lneq) avec cf la fusion des classes contenant des termes de la forme f(ti) et f(tj)
@@ -173,9 +174,9 @@ let rec elim_classes_vides classes = match classes with
 ;;
 
 let rec cloture_congruence c classes =
-  let nc, nclasses = fusionne_congruence c classes in
+  let nc, nclasses, b = fusionne_congruence c classes in
   let l = elim_classes_vides (nc::nclasses) in
-  if c = nc then l,nc else cloture_congruence nc nclasses
+  if (not !b) then l else cloture_congruence nc nclasses
 ;;
 
 (* itère fusionne_congruence pour calculer la clôture des ensembles obtenus en appliquant le procédé de la
@@ -195,16 +196,34 @@ cloture_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4]; [F 
 cloture_congruence [V 1; V 2] [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4; V 5]; [V 5; V 6; V 7]; [F ("f", [V 6]); F ("g", [V 5])]; [F ("g", [V 7])]; [F ("h", [V 1])]];;
 
 let partition_c classes =
-  let q = Queue.create () in
+  let q = ref (Queue.create ()) in
   let rec enfile_classes cl = match cl with
       | [] -> ()
-      | c::cl -> Queue.add c q; enfile_classes cl
+      | c::cl -> Queue.add c !q; enfile_classes cl
   in enfile_classes classes;
   let mc = ref classes in
   let rc = ref classes in
-  let r = Queue.create () in
-  while not (Queue.is_empty q) do
+  let b = ref true in
+  while !mc <> !rc || !b do
+    mc := !rc;
+    while not (Queue.is_empty !q) do
+      let c = Queue.take !q in
+      let l = cloture_congruence c (!rc) in
+      rc := l;
+    done;
+    b := false;
+    enfile_classes !rc;
   done;
+  !mc
+;;
+
+(* réalise la partition de la partie 1.c de l'algorithme:
+   on appelle cloture_congruence pour chaque classe de la liste des classes puis on recommence avec la
+   nouvelle liste de classes ainsi obtenue jusqu'à ce que la liste de classes ne soit plus modifiée
+*)
+
 
 let classes_c = partition_c classes_b;;
 classes_c;;
+
+partition_c [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4; V 5]; [V 5; V 6; V 7]; [F ("f", [V 6]); F ("g", [V 5])]; [F ("g", [V 7])]; [F ("h", [V 1])]];;
