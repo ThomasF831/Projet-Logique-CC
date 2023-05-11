@@ -227,3 +227,33 @@ let classes_c = partition_c classes_b;;
 classes_c;;
 
 partition_c [[F ("f", [V 1]); V 3]; [F ("f", [V 2]); V 4; V 5]; [V 5; V 6; V 7]; [F ("f", [V 6]); F ("g", [V 5])]; [F ("g", [V 7])]; [F ("h", [V 1])]];;
+
+let rec liste_inegalites formule = match formule with
+  | [] -> []
+  | (NEq (ti,tj))::formule -> (ti,tj)::(liste_inegalites formule)
+  | _::formule -> liste_inegalites formule
+;;
+
+(* extrait les inégalités de formule et renvoie la liste des couples de terme ne devant pas appartenir à
+   la même classe
+*)
+
+let rec sont_congrus ti tj classes = match classes with
+  | [] -> failwith "L'un des termes n'apparaît dans aucune classe !"
+  | c::classes when List.mem ti c -> List.mem tj c
+  | _::classes -> sont_congrus ti tj classes
+;;
+
+let rec est_satisfiable liste_ineq classes = match liste_ineq with
+  | [] -> true
+  | (ti,tj)::liste_ineq -> if sont_congrus ti tj classes then false else est_satisfiable liste_ineq classes
+;;
+
+let congruence_closure formule =
+  let classes = partition_c (partition_b (partition_a (simpl formule))) in
+  let liste_ineq = liste_inegalites (simpl formule) in
+  let b = est_satisfiable liste_ineq classes in
+  if b then print_string "Satisfiable !" else print_string "Insatisfiable !"
+;;
+
+congruence_closure exemple;;
