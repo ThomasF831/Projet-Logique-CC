@@ -1,12 +1,18 @@
-all: tests
+all: test test2
 
-tests: tests.ml projet_logique.ml
-	ocamlc projet_logique.ml tests.ml -o exc
+test: test_pas_a_pas.ml projet_logique.ml
+	ocamlc projet_logique.ml test_pas_a_pas.ml -o exc
 	./exc
 
-clean: exc projet_logique.cmi projet_logique.cmo tests.cmi tests.cmo
+test2: test_pas_a_pas_2.ml projet_logique.ml
+	ocamlc projet_logique.ml test_pas_a_pas_2.ml -o exc
+	./exc
+
+clean:
 	rm exc
 	rm projet_logique.cmi
 	rm projet_logique.cmo
-	rm tests.cmi
-	rm tests.cmo
+	rm test_pas_a_pas.cmi
+	rm test_pas_a_pas.cmo
+	rm test_pas_a_pas_2.cmi
+	rm test_pas_a_pas_2.cmo

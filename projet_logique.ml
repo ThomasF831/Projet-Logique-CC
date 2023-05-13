@@ -269,3 +269,130 @@ let congruence_closure formule =
 ;;
 
 (* congruence_closure exemple;; *)
+
+
+
+                                         (*    Extension : Pretty printer    *)
+
+open Printf;;
+
+let n () = printf "\n";;
+
+let rec print_term t = match t with
+  | V n -> printf "X%d" n
+  | F (id,l) -> printf "%s(" id; List.iter print_term l; printf ")"
+;;
+
+let rec print_eqpred e = match e with
+  | Eq (t1, t2) -> print_term t1; printf " = "; print_term t2
+  | NEq (t1, t2) -> print_term t1; printf " =/= "; print_term t2
+  | Not e -> printf "¨¨¨|("; print_eqpred e; printf " )"
+;;
+
+let rec print_formule l = match l with
+  | [] -> printf "T"
+  | [e] -> print_eqpred e
+  | e::l -> print_eqpred e; printf " /\\ "; print_formule l
+;;
+
+let rec enumere_classe c = match c with
+  | [] -> printf "Ø"
+  | [t] -> print_term t
+  | t::c -> print_term t; printf ", "; enumere_classe c
+;;
+
+let print_elems c = match c with
+  | [] -> enumere_classe c
+  | _ -> printf "{ "; enumere_classe c; printf " } "
+;;
+
+let rec print_classes classes = match classes with
+  | [] -> printf "Ø"
+  | [c] -> print_elems c
+  | c::l -> print_elems c; printf ", "; print_classes l
+;;
+
+
+let rec print_term t = match t with
+  | V n -> printf "X%d" n
+  | F (id,l) -> printf "%s(" id; List.iter print_term l; printf ")"
+;;
+
+let rec print_eqpred e = match e with
+  | Eq (t1, t2) -> print_term t1; printf " = "; print_term t2
+  | NEq (t1, t2) -> print_term t1; printf " =/= "; print_term t2
+  | Not e -> printf "¨¨¨|("; print_eqpred e; printf " )"
+;;
+
+let rec print_formule l = match l with
+  | [] -> printf "T"
+  | [e] -> print_eqpred e
+  | e::l -> print_eqpred e; printf " /\\ "; print_formule l
+;;
+
+let rec enumere_classe c = match c with
+  | [] -> printf "Ø"
+  | [t] -> print_term t
+  | t::c -> print_term t; printf ", "; enumere_classe c
+;;
+
+let print_elems c = match c with
+  | [] -> enumere_classe c
+  | _ -> printf "{ "; enumere_classe c; printf " } "
+;;
+
+let rec print_classes classes = match classes with
+  | [] -> printf "Ø"
+  | [c] -> print_elems c
+  | c::l -> print_elems c; printf ", "; print_classes l
+;;
+
+
+
+                                         (*    Extension : Fonctions d'arité quelconque    *)
+
+
+let rec eq_listes tl1 tl2 classes = match tl1, tl2 with
+  | [], [] -> true
+  | [], _ -> false
+  | _, [] -> false
+  | t1::tl1, t2::tl2 -> if sont_congrus t1 t2 classes then eq_listes tl1 tl2 classes else false
+;;
+
+let rec parcours_classe c classes nextclasses leq c_in_leq =
+  let rec cherche_id_classe id tl classe c leq c_in_leq =  match classe with
+      | [] -> ()
+      | F(id2,tl2)::classe when id = id2 && eq_listes tl  tl2 classes -> if !c_in_leq then leq := classe::(!leq)
+                                                                                          else (printf "a"; c_in_leq := true; leq := c::classe::(!leq));
+                                                                              cherche_id_classe id tl classe c leq c_in_leq
+      | _::classe ->  cherche_id_classe id tl classe c leq c_in_leq
+  in let rec cherche_id id tl lclasses c leq c_in_leq = match lclasses with
+    | [] -> ()
+    | classe::lclasses -> cherche_id_classe id tl classe c leq c_in_leq; cherche_id id tl lclasses c leq c_in_leq
+     in match c with
+    | [] -> ()
+    | F(id,tl)::c ->  cherche_id id tl nextclasses c leq c_in_leq; parcours_classe c classes nextclasses leq c_in_leq
+    | _::c -> parcours_classe c classes nextclasses leq c_in_leq
+;;
+
+let rec complementaire x e = match e with
+  | [] -> []
+  | a::e when List.mem a x -> complementaire x e
+  | a::e -> a::(complementaire x e)
+;;
+
+let rec fusionne_ext classes =
+  let leq = ref [] in
+  let c_in_leq = ref false in
+  let rec parcours cl = match cl with
+    | [] ->  ()
+    | c::cl -> parcours_classe c classes cl leq c_in_leq
+  in parcours classes;
+  if !c_in_leq then  fusionne_ext (merge_liste (Obj.magic !leq))@(complementaire !leq classes) else classes
+;;
+
+(*
+parcours_classe [F("f",[V 1; V 2])] [[F("f",[V 1; V 2])]; [F("f",[V 1; V 2])]; [V 1; V 2]] [[F("f",[V 1; V 2])]; [V 1; V 2]] leq c_in_leq;;
+*)
+
+fusionne_ext [[V 1; V 2];[F ("f", [V 1; F("g", [V 2])])]; [V 3; F("f",[V 1; F("g", [V 3])])];[F("f", [V 2; V 4]); F("g", [V 2]); V 4]];;
