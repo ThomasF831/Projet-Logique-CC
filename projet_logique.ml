@@ -1,4 +1,4 @@
- (* Question 3 *)
+(* Question 3 *)
 
 (*
 x1 = x2 /\ x2 = x3 /\ x4 = x5 /\ ~ ( f(x1) = f(x3) )
@@ -102,9 +102,12 @@ let fusionne_c c classes =
    et lneq est la liste des autres classes
 *)
 
-let rec partition_b classes = match classes with
+let rec partition_b classes =
+  let modif = ref false in
+  let step classes = match classes with
   | [] -> []
-  | c::classes -> let nc, l = fusionne_c c classes in nc::(partition_b l)
+  | c::classes -> let nc, l = fusionne_c c classes in if c <> nc then modif := true; nc::(partition_b l)
+  in let nclasses = step classes in if !modif then partition_b nclasses else nclasses
 ;;
 
 (* réalise la partition de la partie 1.b de l'algorithme :
@@ -351,7 +354,7 @@ let rec print_classes classes = match classes with
 
                                          (*    Extension : Fonctions d'arité quelconque    *)
 
-
+(*
 let rec eq_listes tl1 tl2 classes = match tl1, tl2 with
   | [], [] -> true
   | [], _ -> false
@@ -388,11 +391,11 @@ let rec fusionne_ext classes =
     | [] ->  ()
     | c::cl -> parcours_classe c classes cl leq c_in_leq
   in parcours classes;
-  if !c_in_leq then  fusionne_ext (merge_liste (Obj.magic !leq))@(complementaire !leq classes) else classes
-;;
+  if !c_in_leq then  fusionne_ext (merge_liste (!leq))@(complementaire !leq classes) else classes
+                                                                                            ;;*)
 
 (*
 parcours_classe [F("f",[V 1; V 2])] [[F("f",[V 1; V 2])]; [F("f",[V 1; V 2])]; [V 1; V 2]] [[F("f",[V 1; V 2])]; [V 1; V 2]] leq c_in_leq;;
 *)
-
-fusionne_ext [[V 1; V 2];[F ("f", [V 1; F("g", [V 2])])]; [V 3; F("f",[V 1; F("g", [V 3])])];[F("f", [V 2; V 4]); F("g", [V 2]); V 4]];;
+(*
+fusionne_ext [[V 1; V 2];[F ("f", [V 1; F("g", [V 2])])]; [V 3; F("f",[V 1; F("g", [V 3])])];[F("f", [V 2; V 4]); F("g", [V 2]); V 4]];; *)
